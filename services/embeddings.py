@@ -1,7 +1,7 @@
 import chromadb
 from lib.llm_model import embeddings
 import os
-
+import uuid
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,15 +18,12 @@ def embed_query(result, url):
     
     collection=client.get_or_create_collection(name="ai-browser")
     
-    doc_counter=0
-    
-    doc_id = f"doc_{doc_counter}"
+    doc_id = str(uuid.uuid4())
     collection.add(
         documents=[result],
         embeddings=[embedded_text],
         metadatas=[{"source": url["organic"][0]["link"]}],
         ids=[doc_id]
     )
-    doc_counter+=1
     
     return embedded_text
