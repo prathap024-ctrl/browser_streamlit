@@ -3,30 +3,38 @@ from langchain_core.output_parsers import StrOutputParser
 from lib.llm_model import embeddings, llm
 import chromadb
 import os
+from langchain_chroma import Chroma
 from dotenv import load_dotenv
 
 load_dotenv()
 
 def search_embeddings(user_input):
-    query_embedding = embeddings.embed_query(user_input)
 
     client = chromadb.CloudClient(
       api_key=os.getenv("CHROMA_API_KEY"),
       tenant=os.getenv("CHROMA_TENANT"),
       database=os.getenv("CHROMA_DATABASE")
     )
-    collection = client.get_or_create_collection(name="ai-browser")
     
-    results = collection.query(
-        query_embeddings=query_embedding,
-        n_results=1
+    vector_store = Chroma(
+        client=client,
+        collection_name="ai-browser",
+        embedding_function=embeddings,
+    )
+    
+    results = vector_store.similarity_search(
+        user_input,
+        k=2
     )
 
-    documents = results.get("documents", [])
-    if documents and documents[0]:
-        retrieved_text = documents[0][0]
-    else:
-        retrieved_text = ""
+    for res in results:
+        retrieved_text = f"*{res.page_content} [{res.metadata}]"
+        
+   #documents = results.get("documents", [])
+   #if documents and documents[0]:
+   #    retrieved_text = documents[0][0]
+   #else:
+   #     retrieved_text = ""
 
     search_prompt = PromptTemplate(
         input_variables=["text", "query"],
